@@ -1,0 +1,5 @@
+.DS_Store
+kickstart
+node_modules
+nwjs-osx-x64
+nwjs-win-x64
