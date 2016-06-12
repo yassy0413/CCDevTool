@@ -1,0 +1,15 @@
+{
+  "name": "CCDevServer",
+  "version": "0.0.1",
+  "main": "src/index.html",
+  "window": {
+    "width": 800,
+    "height": 640,
+    "toolbar": true
+  },
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "underscore": "^1.8.3"
+  }
+}
