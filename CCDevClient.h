@@ -7,6 +7,8 @@
 
 #include "cocos2d.h"
 #include "cocos-ext.h"
+#include <unordered_map>
+
 
 NS_CC_EXT_BEGIN
 
@@ -29,9 +31,19 @@ public:
     static void destroyInstance();
     
     /**
-     * Set host name.
+     * Set the host name.
      */
     void setHostName(const std::string& hostname);
+    
+    /**
+     * Get the host name.
+     */
+    const std::string& getHostName() const;
+    
+    /**
+     * Set the callback with changed host.
+     */
+    void setHostChangedCallback(std::function<void()> callback);
     
     /**
      *  Checks whether the path is an absolute path.
@@ -39,9 +51,14 @@ public:
     bool isAbsolutePath(const std::string& path) const;
     
     /**
+     *  Checks whether a file exists.
+     */
+    bool isFileExist(const std::string& path);
+    
+    /**
      *  Returns the fullpath for a given filename.
      */
-    std::string fullPathForFilename(const std::string &filename);
+    std::string fullPathForFilename(std::string filename);
     
     /**
      *  Creates file data from a file.
@@ -78,12 +95,20 @@ CC_CONSTRUCTOR_ACCESS:
      */
     bool perform(const std::string& path, const std::string& api, std::function<void()> successCallback);
     
+    /**
+     *
+     */
+    bool isIgnoreTarget(const std::string& path) const;
+    
 private:
     static DevClient* s_sharedDevClient;
     
     void* _curl;
     std::vector<char> _buffer;
     std::string _hostName;
+    std::vector<std::string> _ignoreExtensionList;
+    std::unordered_map<std::string, std::string> _fullPathCache;
+    std::function<void()> _hostChangedCallback;
 };
 
 NS_CC_EXT_END

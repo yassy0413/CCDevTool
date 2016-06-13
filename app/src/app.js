@@ -3,19 +3,31 @@
 
 var os = require('os');
 var fs = require('fs');
-var path = require('path')
+var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 
 var port = 1337;
 
+/**
+ * Log window
+ */
 var logWindow = null;
+var checkOutLog = true;
 function log(text){
-	logWindow.val( logWindow.val() + text + '\n' );
-	logWindow.scrollTop( logWindow[0].scrollHeight );
+	if( checkOutLog ){
+		logWindow.val( logWindow.val() + text + '\n' );
+		// Auto scroll
+		if( logWindow[0].scrollHeight - (logWindow.scrollTop() + logWindow.height()) < 100 ){
+			logWindow.scrollTop( logWindow[0].scrollHeight );
+		}
+	}
 }
 
+/**
+ * Server implements
+ */
 var server = express();
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
@@ -25,30 +37,36 @@ server.get('/', function (req, res){
 });
 server.get('/file/exist/:path', function(req, res){
 	var targetPath = new Buffer(req.params.path, 'base64').toString();
-	try {
-		var stats = fs.statSync(window.localStorage.rootPath + targetPath);
-		res.writeHead( 200, {
-			'Content-Length': 0,
-			'Content-Type': 'application/octet-stream' });
-	}catch(e){
-		res.statusCode = 404;
-	}
-	res.end();
-	log("E[" + res.statusCode + "]" + targetPath);
+	fs.stat(window.localStorage.rootPath + targetPath, function(err, data){
+		if( err ){
+			res.writeHead( 404, {
+				'Content-Length': 0,
+				'Content-Type': 'application/octet-stream' });
+		}else{
+			res.writeHead( 200, {
+				'Content-Length': 0,
+				'Content-Type': 'application/octet-stream' });
+		}
+		res.end();
+		log("E[" + res.statusCode + "]" + targetPath);
+	});
 });
 server.get('/file/data/:path', function(req, res){
 	var targetPath = new Buffer(req.params.path, 'base64').toString();
-	try {
-		var file = fs.readFileSync(window.localStorage.rootPath + targetPath);
-		res.writeHead( 200, {
-			'Content-Length': file.length,
-			'Content-Type': 'application/octet-stream' });
-		res.write( file );
-	}catch(e){
-		res.statusCode = 404;
-	}
-	res.end();
-	log("D[" + res.statusCode + "]" + targetPath);
+	fs.readFile(window.localStorage.rootPath + targetPath, function(err, data){
+		if( err ){
+			res.writeHead( 404, {
+				'Content-Length': 0,
+				'Content-Type': 'application/octet-stream' });
+		}else{
+			res.writeHead( 200, {
+				'Content-Length': data.length,
+				'Content-Type': 'application/octet-stream' });
+			res.write( data );
+		}
+		res.end();
+		log("D[" + res.statusCode + "]" + targetPath);
+	});
 });
 server.get('/file/list/:path', function(req, res){
 	var targetPath = new Buffer(req.params.path, 'base64').toString();
@@ -65,14 +83,20 @@ server.get('/file/list/:path', function(req, res){
 			'Content-Type': 'text/plain' });
 		res.write( ret );
 	}catch(e){
-		res.statusCode = 404;
+		res.writeHead( 404, {
+			'Content-Length': 0,
+			'Content-Type': 'text/plain' });
+		log(e.message);
 	}
 	res.end();
 	log("L[" + res.statusCode + "]" + targetPath);
 });
 server.listen(port);
 
-function getIpAddress(){
+/**
+ *
+ */
+function getLocalIpAddress(){
 	var text = "127.0.0.1";
 	_.each(os.networkInterfaces(), function(networkInterface){
 		var target = _.find(networkInterface, function(iface){
@@ -85,11 +109,17 @@ function getIpAddress(){
 	return text;
 }
 
-// 
+/**
+ * onEnter
+ */
 $(document).ready( function(){
 	logWindow = $('#log');
 
-	$('#server-info').text( '[' + os.hostname() + '] ' + getIpAddress() + ':' + port );
+	$('#checkOutLog').click( function(){
+	    checkOutLog = this.checked;
+	});
+
+	$('#server-info').text( '[' + os.hostname() + '] ' + getLocalIpAddress() + ':' + port );
 
 	$('#reload-button').click( function(){
 		chrome.runtime.reload();
@@ -104,7 +134,7 @@ $(document).ready( function(){
 	var cancelEvent = function(event){
 		event.preventDefault();
 		event.stopPropagation();
-	}
+	};
 	$(document).on({
 		"dragenter": cancelEvent,
 		"dragover": cancelEvent,
