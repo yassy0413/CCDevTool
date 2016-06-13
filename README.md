@@ -1,13 +1,34 @@
-TODO: リファクタリング。。。
+
+# 概要
+cocos2d-x 環境から、PC上のファイルへアクセスする為の<br>
+サーバーツールです。
+
+NodeWebkitで構築したCCDevServerを起動させて、
+同期させるパスを定義します。
+
+Client用ソースコードを適用し、
+cocos2d-xのプロジェクトからアクセスします。
 
 
-# easy-setup
+# 必要なもの
 
-setup.commandを実行する
-※TODO: Windows環境用の開発環境バッチ
+- npm<br>[Node.js](https://nodejs.org/en/)をインストールすると一緒に入ります
+- git<br>setup.commandの実行に必要。
 
+# 簡単セットアップ
+※現在はMAC用のみ
 
-# manul-setup
+**setup.command**を実行する
+
+実行後、以下のファイルが作成されていれば成功です。
+
+- kickstart
+- node_modules
+- nwjs-osx-x64
+- nwjs-win-x64
+
+# 手動セットアップ
+※現在はMAC用のみ
 
 1.npm install
 
