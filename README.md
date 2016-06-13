@@ -6,13 +6,32 @@
 cocos2d-x 環境から、PC上のファイルへアクセスする為の<br>
 サーバーツールです。
 
-NodeWebkitで構築したCCDevServerを起動させて、
+NodeWebkitで構築したCCDevServerを起動させて、<br>
 同期させるパスを定義します。
 
-Client用ソースコードを適用し、
-cocos2d-xのプロジェクトからアクセスします。
+Client用ソースコードを適用し、<br>
+cocos2d-xのプロジェクトからFileUtilsでのアクセスに対して<br>
+HTTP通信を挟みます。
+
+バンドルアセットのルートを、ネットワークドライブに対しても定義するイメージです。
 
 ![image](https://github.com/yassy0413/CCDevTool/blob/develop/doc/image.jpg)
+<br>
+
+### サーバーツールについて
+[Node-Webkit](https://github.com/nwjs/nw.js/)を使用して、<br>
+任意のPCに簡易的なGUI付きファイルサーバーを構築します。
+
+Clientとなるcocos2d-xアプリケーションから、<br>
+このファイルサーバーへアクセスする事で、<br>
+可変なファイルアクセス環境を実現します。
+
+以下の機能が提供されます。
+- 同期するフォルダへのパスを設定
+- ファイルアクセスのログ表示
+- サーバーアクセス用のホスト名称とIpAddressを表示 (Client側で必要な情報)
+- <font color=red>Windowsでも動作可能</font> (ModuleのDLはMACの方が楽)
+- 見た目を良くする為に、[HTML KickStart](http://www.99lime.com/elements/) を適用
 
 # 必要なもの
 
@@ -59,7 +78,19 @@ cocos2d-xのプロジェクトからアクセスします。
 - CCDevClient.h
 - CCDevClient.cpp
 
-2.CCFileUtils.cppの修正
+2.サーバー情報の設定
+
+サーバーツールに表示されている**IpAddress**か**HostName**を設定します。
+```cpp
+
+// ex) IpAddressで設定
+cocos2d::extension::DevClient::getInstance()->setHostName("http://192.168.0.1:1337/");
+
+// ex) HostNameで設定
+cocos2d::extension::DevClient::getInstance()->setHostName("http://HostName:1337/");
+```
+
+3.CCFileUtils.cppの修正
 
 現状どうしても加工が必要になるので、コード量を最小限に抑える為<br>
 CCDevClient.cppで定義している関数をexternして使います。
@@ -118,6 +149,9 @@ static Data getData(const std::string& filename, bool forString)
     }
     
     unsigned char* buffer = nullptr;
+    size_t size = 0;
+    size_t readsize;
+    const char* mode = nullptr;
     
     ...
 ```
@@ -143,6 +177,8 @@ std::string FileUtils::getPathForFilename(const std::string& filename, const std
     
 ```
 
+# 展望
+クライアント側にListenを設けて、サーバーツールからコマンドを送信する
 
 # Qiita
 http://qiita.com/yassy
