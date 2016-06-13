@@ -9,6 +9,8 @@ NodeWebkitで構築したCCDevServerを起動させて、
 Client用ソースコードを適用し、
 cocos2d-xのプロジェクトからアクセスします。
 
+![image](https://github.com/yassy0413/CCDevTool/blob/develop/doc/image.jpg)
+
 
 # 必要なもの
 
