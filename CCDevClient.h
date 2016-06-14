@@ -1,6 +1,6 @@
 /****************************************************************************
  Copyright (c) Yassy
- https://github.com/yassy0413/cocos2dx-3.x-util
+ https://github.com/yassy0413/CCDevTool
  ****************************************************************************/
 #ifndef __CCDEVCLIENT_H__
 #define __CCDEVCLIENT_H__

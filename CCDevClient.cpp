@@ -89,8 +89,8 @@ bool DevClient::init()
     curl_easy_setopt(_curl, CURLOPT_FAILONERROR, 1L);
     curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(_curl, CURLOPT_CONNECTTIMEOUT, 10L);
-    curl_easy_setopt(_curl, CURLOPT_TIMEOUT, 360L);
+    curl_easy_setopt(_curl, CURLOPT_LOW_SPEED_LIMIT, 1L);
+    curl_easy_setopt(_curl, CURLOPT_LOW_SPEED_TIME, 5L);
     curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION, writeData);
     curl_easy_setopt(_curl, CURLOPT_WRITEDATA, &_buffer);
     
@@ -111,6 +111,7 @@ void DevClient::setHostName(const std::string& hostname)
 {
     _hostName = hostname;
     cocos2d::UserDefault::getInstance()->setStringForKey(KEY_HOSTNAME, _hostName);
+    cocos2d::UserDefault::getInstance()->flush();
     
     if (_hostChangedCallback)
     {
@@ -135,14 +136,17 @@ bool DevClient::perform(const std::string& path, const std::string& api, std::fu
     const std::string url = _hostName + api + out;
     free(out);
     curl_easy_setopt(_curl, CURLOPT_URL, url.c_str());
+//    CCLOG("DevClient::perform: %s", url.c_str());
     
     long status = -1;
     CURLcode code = curl_easy_perform(_curl);
-    if( code == CURLE_OK ){
+    if (code == CURLE_OK)
+    {
         code = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &status);
     }
     const bool result( code == CURLE_OK && status == 200 );
-    if( result && successCallback ){
+    if( result && successCallback )
+    {
         successCallback();
     }
     
@@ -162,13 +166,15 @@ bool DevClient::isIgnoreTarget(const std::string& path) const
         const auto it = std::find(_ignoreExtensionList.cbegin(), _ignoreExtensionList.cend(), ext+1);
         return (it != _ignoreExtensionList.end());
     }
-    return false;
+    
+    return true;
 }
 
 bool DevClient::isAbsolutePath(const std::string& path) const
 {
-    return ( path.length() >= _hostName.length() ) &&
-           ( memcmp(path.c_str(), _hostName.c_str(), _hostName.length()) == 0 );
+    return  !_hostName.empty() &&
+            ( path.length() >= _hostName.length() ) &&
+            ( memcmp(path.c_str(), _hostName.c_str(), _hostName.length()) == 0 );
 }
 
 bool DevClient::isFileExist(const std::string& path)
@@ -178,10 +184,6 @@ bool DevClient::isFileExist(const std::string& path)
 
 std::string DevClient::fullPathForFilename(std::string path)
 {
-    if (isIgnoreTarget(path))
-    {
-        return "";
-    }
     if (path[0] == '/')
     {
         return "";
@@ -190,6 +192,11 @@ std::string DevClient::fullPathForFilename(std::string path)
     if (isAbsolutePath(path))
     {
         path = path.substr(_hostName.length(), std::string::npos);
+    }
+    
+    if (isIgnoreTarget(path))
+    {
+        return "";
     }
     
     auto cacheIter = _fullPathCache.find(path);
@@ -210,15 +217,16 @@ cocos2d::Data DevClient::getData(std::string path, bool forString)
 {
     cocos2d::Data ret;
     
+    if (!isAbsolutePath(path))
+    {
+        path = cocos2d::FileUtils::getInstance()->fullPathForFilename(path);
+    }
+    
     if (isIgnoreTarget(path))
     {
         return ret;
     }
     
-    if (!isAbsolutePath(path))
-    {
-        path = cocos2d::FileUtils::getInstance()->fullPathForFilename(path);
-    }
     if (isAbsolutePath(path))
     {
         perform(path.substr(_hostName.length(), std::string::npos), "file/data/", [&](){

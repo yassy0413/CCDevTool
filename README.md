@@ -4,7 +4,7 @@
 - cocos2d-xアプリからそれへアクセスする
 
 cocos2d-x 環境から、PC上のファイルへアクセスする為の<br>
-サーバーツールです。
+サーバーツールとクライアントコードです。
 
 NodeWebkitで構築したCCDevServerを起動させて、<br>
 同期させるパスを定義します。
@@ -166,16 +166,82 @@ std::string FileUtils::getPathForFilename(const std::string& filename, const std
     path += resolutionDirectory;
     
     // for DevClient
-    const std::string networkPath = fullPathForNetworkFilename(path+file);
-    if (!networkPath.empty()){
+    std::string networkPath = path;
+    if (!_defaultResRootPath.empty() && _defaultResRootPath.size() <= networkPath.size())
+    {
+        if (memcmp(networkPath.c_str(), _defaultResRootPath.c_str(), _defaultResRootPath.size()) == 0)
+        {
+            networkPath = networkPath.substr(_defaultResRootPath.length(), std::string::npos);
+        }
+    }
+    networkPath = fullPathForNetworkFilename(networkPath+file);
+    if (!networkPath.empty())
+    {
         return networkPath;
     }
+    
     
     path = getFullPathForDirectoryAndFilename(path, file);
     
     ...
     
 ```
+
+4.CCFileUtils-android.cppの修正
+
+android版を動かす場合は、追加で以下が必要になります。
+
+```cpp
+#include "CCFileUtils.h"
+
+// for DevClient
+extern bool isNetworkAbsolutePath(const std::string& filename);
+extern cocos2d::Data getNetworkData(const std::string& filename, bool forString);
+```
+
+```cpp
+Data FileUtilsAndroid::getData(const std::string& filename, bool forString)
+{
+    if (filename.empty())
+    {
+        return Data::Null;
+    }
+
+    {// for DevClient
+        Data ret = getNetworkData(filename, forString);
+        if (!ret.isNull())
+        {
+            return ret;
+        }
+    }
+    
+    unsigned char* data = nullptr;
+    ssize_t size = 0;
+    string fullPath = fullPathForFilename(filename);
+    cocosplay::updateAssets(fullPath);
+    
+    ...
+    
+    
+```
+
+```cpp
+bool FileUtilsAndroid::isAbsolutePath(const std::string& strPath) const
+{
+    // for DevClient
+    if (isNetworkAbsolutePath(strPath) )
+    {
+        return true;
+    }
+
+    if (strPath[0] == '/' || strPath.find(_defaultResRootPath) == 0)
+    {
+        return true;
+    }
+    return false;
+}
+```
+
 
 # 展望
 クライアント側にListenを設けて、サーバーツールからコマンドを送信する
